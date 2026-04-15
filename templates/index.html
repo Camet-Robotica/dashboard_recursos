@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telemetría Camet – Monitor de Recursos</title>
+    <meta name="description"
+        content="Dashboard en tiempo real de telemetría de hardware: CPU, GPU, RAM, almacenamiento y más.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="app-layout">
+        <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='images/Camet_logo_new.png') }}" alt="Camet Logo"
+                        class="logo-image">
+                    <div class="logo-text">
+                        <span class="logo-title">Telemetría Camet</span>
+                        <span class="logo-sub">Monitor de Recursos</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-target="#dashboard-view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    Dashboard
+                </button>
+                <button class="nav-btn" data-target="#umbrales-view">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Umbrales
+                </button>
+                <a href="{{ url_for('auth.logout') }}" class="nav-btn" style="text-decoration: none; color: inherit; margin-top: auto; color: #ef4444;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Cerrar Sesión
+                </a>
+            </nav>
+
+            <div class="sidebar-controls" id="dashboard-controls">
+                <h3 class="controls-title">Filtro de Tiempo</h3>
+                <div class="control-group">
+                    <label class="control-label">Desde</label>
+                    <input type="datetime-local" id="start-date" class="dt-input">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Hasta</label>
+                    <input type="datetime-local" id="end-date" class="dt-input">
+                </div>
+
+                <div class="control-actions">
+                    <button id="apply-btn" class="btn btn-primary">
+                        Filtrar
+                    </button>
+                    <button id="live-btn" class="btn btn-ghost">
+                        <span class="live-dot" id="live-dot"></span>
+                        En vivo
+                    </button>
+                </div>
+
+                <div class="status-bar">
+                    <span id="status-text" class="status-text">Conectando…</span>
+                    <span id="last-update" class="last-update"></span>
+                </div>
+
+                <h3 class="controls-title mt-4">Clientes</h3>
+                <div id="clients-checkboxes" class="clients-checkboxes">
+                    <!-- checkboxes will be populated here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view-section active">
+                <div id="empty-state" class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path
+                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p>Selecciona clientes para visualizar</p>
+                </div>
+
+                <div id="dashboard" class="dashboard"></div>
+            </div>
+
+            <!-- Umbrales View -->
+            <div id="umbrales-view" class="view-section">
+                <header class="section-header">
+                    <h2>Gestión de Umbrales</h2>
+                    <p>Configura los valores máximos permitidos para cada métrica.</p>
+                </header>
+
+                <div class="umbrales-card">
+                    <form id="umbral-form" class="umbral-form">
+                        <input type="hidden" id="umbral-edit-id">
+                        <div class="form-group">
+                            <label>Componente (Hardware)</label>
+                            <select id="hardware-select" class="form-input">
+                                <option value="">Sin componente específico</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sensor</label>
+                            <select id="sensor-select" class="form-input" required>
+                                <option value="">Cargando sensores...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Máximo</label>
+                            <input type="number" step="any" id="umbral-max" class="form-input" required
+                                placeholder="Ej: 80">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" id="umbral-submit-btn" class="btn btn-primary">Agregar Umbral</button>
+                            <button type="button" id="umbral-cancel-btn" class="btn btn-ghost"
+                                style="display:none">Cancelar</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Hardware</th>
+                                    <th>Sensor</th>
+                                    <th>Umbral</th>
+                                    <th class="actions-col">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="umbrales-tbody">
+                                <!-- filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══════════════════ TOOLTIP GLOBAL ═══════════════════ -->
+    <div id="global-tooltip" class="global-tooltip hidden"></div>
+
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

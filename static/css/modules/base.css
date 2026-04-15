@@ -1,0 +1,35 @@
+/* RESET / BASE */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* ── Gradient background mesh ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(ellipse 80% 60% at 10% -10%, rgba(200, 50, 175, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 110%, rgba(120, 50, 200, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+

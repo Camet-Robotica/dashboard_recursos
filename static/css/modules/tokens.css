@@ -1,0 +1,41 @@
+/* DESIGN TOKENS */
+:root {
+    --bg-base: #050810;
+    --bg-surface: #0c1120;
+    --bg-card: #101827;
+    --bg-card-alt: #0e1525;
+    --bg-input: #0a1020;
+
+    --border: rgba(99, 143, 238, 0.10);
+    --border-hover: rgba(99, 143, 238, 0.22);
+
+    --accent: #4f8ef7;
+    --accent-glow: rgba(79, 142, 247, 0.20);
+    --accent-dim: rgba(79, 142, 247, 0.55);
+
+    --green: #34d399;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --teal: #2dd4bf;
+    --sky: #38bdf8;
+
+    --text-primary: #e8edf7;
+    --text-secondary: #8fa3c8;
+    --text-muted: #4a5f84;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --header-h: 88px;
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+    --shadow-glow: 0 0 32px var(--accent-glow);
+}
+
