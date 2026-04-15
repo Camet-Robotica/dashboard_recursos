@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 LOGGING_DB_CONFIG = {
     'host': os.getenv('AUTH_MYSQL_HOST', 'localhost'),
     'port': int(os.getenv('AUTH_MYSQL_PORT', 3306)),
-    'user': os.getenv('AUTH_MYSQL_USER', 'cametcom'),
+    'user': os.getenv('AUTH_MYSQL_USER'),
     'password': os.getenv('AUTH_MYSQL_PASSWORD'),
-    'database': os.getenv('AUTH_MYSQL_DB', 'cametcom_usuarios'),
+    'database': os.getenv('AUTH_MYSQL_DB'),
     'connect_timeout': 60,
 }
 
