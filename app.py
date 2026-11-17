@@ -1,10 +1,12 @@
 import os
+import re
 import psycopg2
 from psycopg2 import extras
+from psycopg2 import sql
 from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, disconnect
 from dotenv import load_dotenv
-from flask_login import LoginManager, login_required
+from flask_login import LoginManager, login_required, current_user
 from datetime import datetime, timedelta
 import threading
 
@@ -68,6 +70,9 @@ def query_data(clients: list, start_time: datetime, end_time: datetime) -> dict:
     try:
         with conn.cursor() as cur:
             for client_table in clients:
+                # El nombre de tabla llega del navegador: solo se aceptan nombres simples.
+                if not isinstance(client_table, str) or not re.fullmatch(r'(rec|recursos)_[a-z0-9_]+', client_table):
+                    continue
                 if not client_table.startswith("rec_"):
                     # Check in case it's actually sent as 'recursos_' from somewhere else
                     if client_table.startswith("recursos_"):
@@ -80,22 +85,22 @@ def query_data(clients: list, start_time: datetime, end_time: datetime) -> dict:
                 # Consultar existencias de tabla u omitir si error
                 try:
                     if trunc != "raw":
-                        cur.execute(f"""
-                            SELECT date_trunc('{trunc}', timestamp),
+                        cur.execute(sql.SQL("""
+                            SELECT date_trunc({trunc}, timestamp),
                                    hardware_id, sensor_id, hardware_name,
                                    AVG(value), MAX(value)
-                            FROM {client_table}
+                            FROM {tabla}
                             WHERE timestamp >= %s AND timestamp <= %s
                             GROUP BY 1,2,3,4 ORDER BY 1 ASC
-                        """, (start_time, end_time))
+                        """).format(trunc=sql.Literal(trunc), tabla=sql.Identifier(client_table)), (start_time, end_time))
                     else:
-                        cur.execute(f"""
+                        cur.execute(sql.SQL("""
                             SELECT timestamp, hardware_id, sensor_id, hardware_name,
                                    value, value
-                            FROM {client_table}
+                            FROM {tabla}
                             WHERE timestamp >= %s AND timestamp <= %s
                             ORDER BY timestamp ASC
-                        """, (start_time, end_time))
+                        """).format(trunc=sql.Literal(trunc), tabla=sql.Identifier(client_table)), (start_time, end_time))
                     
                     for ts, hw_id, sen_id, hw_name, val, max_val in cur.fetchall():
                         val      = round(float(val),      3) if val      is not None else 0.0
@@ -296,8 +301,17 @@ def api_modify_umbral(umbral_id):
 
 # ─── WebSocket ────────────────────────────────────────────────────────────────
 
+@socketio.on('connect')
+def handle_connect(auth=None):
+    # Sin sesión iniciada no se acepta la conexión del WebSocket.
+    if not current_user.is_authenticated:
+        return False
+
 @socketio.on('request_data')
 def handle_request(payload):
+    if not current_user.is_authenticated:
+        disconnect()
+        return
     clients = payload.get('clients', [])
     start_str = payload.get('start')
     end_str   = payload.get('end')
@@ -316,6 +330,9 @@ def handle_request(payload):
 
 @socketio.on('request_clients')
 def handle_request_clients():
+    if not current_user.is_authenticated:
+        disconnect()
+        return
     conn = get_db()
     clients = []
     try:
@@ -337,4 +354,4 @@ def handle_request_clients():
     emit('clients_list', {'clients': clients})
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5500, host='0.0.0.0', allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=False, port=5500, host='0.0.0.0', allow_unsafe_werkzeug=True)
