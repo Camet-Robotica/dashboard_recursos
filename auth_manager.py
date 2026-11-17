@@ -23,7 +23,7 @@ class AuthManager:
                 user=os.getenv('AUTH_MYSQL_USER'),
                 password=os.getenv('AUTH_MYSQL_PASSWORD'),
                 database=os.getenv('AUTH_MYSQL_DB', 'cametcom_usuarios'),
-                connect_timeout=60
+                connection_timeout=5
             )
         except Exception as e:
             print(f"Error conectando a Auth DB: {e}")
@@ -88,4 +88,4 @@ class AuthManager:
         finally:
             if conn and conn.is_connected():
                 cursor.close()
-                conn.close()
+                conn.close()

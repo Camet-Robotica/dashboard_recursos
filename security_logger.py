@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 
 # Configuración de MySQL para logging
 LOGGING_DB_CONFIG = {
-    'host': os.getenv('AUTH_MYSQL_HOST', 'localhost'),
-    'port': int(os.getenv('AUTH_MYSQL_PORT', 3306)),
-    'user': os.getenv('AUTH_MYSQL_USER'),
-    'password': os.getenv('AUTH_MYSQL_PASSWORD'),
-    'database': os.getenv('AUTH_MYSQL_DB'),
-    'connect_timeout': 60,
+    'host': os.getenv('LOG_MYSQL_HOST', 'localhost'),
+    'port': int(os.getenv('LOG_MYSQL_PORT', 3306)),
+    'user': os.getenv('LOG_MYSQL_USER', 'cametcom'),
+    'password': os.getenv('LOG_MYSQL_PASSWORD'),
+    'database': os.getenv('LOG_MYSQL_DB', 'cametcom_usuarios'),
+    'connection_timeout': 5,
 }
 
 # COMENTADO - Tabla security_events no existe aún
