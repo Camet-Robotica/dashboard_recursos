@@ -1,5 +1,6 @@
 import os
 import re
+import secrets
 import psycopg2
 from psycopg2 import extras
 from psycopg2 import sql
@@ -16,7 +17,8 @@ env_path_parent = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(_
 load_dotenv(env_path_parent)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'telemetry_secret_2024')
+# Sin SECRET_KEY en el .env se usa una clave al azar por arranque (nunca una conocida).
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') or secrets.token_hex(32)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 login_manager = LoginManager()
